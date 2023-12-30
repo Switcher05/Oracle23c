@@ -1,0 +1,51 @@
+version: '3'
+services:
+  database:
+    image: container-registry.oracle.com/database/free:latest
+    volumes:
+      - /home/ryan/oracle/db/oradata:/opt/oracle/oradata # persistent oracle database data.
+      - /home/ryan/oracle/db/startup:/opt/oracle/scripts/startup # A volume with custom scripts to be run after database startup.
+      - /home/ryan/oracle/db/setup:/opt/oracle/scripts/setup #  A volume with custom scripts to be run after database setup.
+    ports:
+      - 1521:1521
+      - 2484:2484
+    restart: unless-stopped
+    environment:
+      - ORACLE_PWD=LarryEllisonIsS3xy
+    networks:
+      - oracle_ntw
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+  ords:
+    image: container-registry.oracle.com/database/ords:latest
+    volumes:
+      - /home/ryan/oracle/ords/ords_secrets:/opt/oracle/variables 
+      - /home/ryan/oracle/ords/ords_config:/etc/ords/config/
+    environment:
+      - ORDS_PWD="ORDS_Password1"
+      - APEX_ADMIN_EMAIL=admin@sample.com
+      - APEX_ADMIN_PWD=Ords_Adm1n
+    ports:
+      - 8181:8181
+    depends_on:
+      - database
+    # entrypoint: ["./wait-for-it.sh","db:8080","--timeout=0","--strict", "./runOrds.sh" ]
+    restart: unless-stopped
+    networks:
+      - oracle_ntw
+networks:
+    oracle_ntw:
+        # use the bridge driver, but enable IPv6
+        driver: bridge
+        # driver_opts:
+        #     com.docker.network.enable_ipv6: "true"
+        # ipam:
+        #     driver: default
+        #     config:
+        #         - subnet: 172.16.238.0/24
+        #           gateway: 172.16.238.1
+        #         - subnet: "2001:3984:3989::/64"
+        #           gateway: "2001:3984:3989::1"
+
